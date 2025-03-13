@@ -240,15 +240,36 @@ namespace SO_Events.Runtime.Editor
         /// </summary>
         private string GetScriptFolderPath()
         {
+            // Try to locate the script within the "Assets" folder first
             string thisScriptGUID = AssetDatabase.FindAssets("EventManagementWindow").FirstOrDefault();
-            if (string.IsNullOrEmpty(thisScriptGUID))
+            if (!string.IsNullOrEmpty(thisScriptGUID))
             {
-                Debug.LogError("Could not find EventManagementWindow script location.");
-                return "Assets";
+                string path = AssetDatabase.GUIDToAssetPath(thisScriptGUID);
+                return System.IO.Path.GetDirectoryName(path); // Path under "Assets/"
             }
 
-            string path = AssetDatabase.GUIDToAssetPath(thisScriptGUID);
-            return Path.GetDirectoryName(path);
+            // Check if the script is inside the "Packages" folder
+            string packagePath = GetPackagePath("com.yourcompany.eventmanagement");
+            if (!string.IsNullOrEmpty(packagePath))
+            {
+                return System.IO.Path.Combine(packagePath, "Editor"); // Editor folder inside package
+            }
+
+            // Default fallback
+            Debug.LogError("Could not find EventManagementWindow script location.");
+            return "Assets";
+        }
+        
+        private string GetPackagePath(string packageName)
+        {
+            string packageInfoFile = System.IO.Path.Combine("Packages", packageName, "package.json");
+            if (System.IO.File.Exists(packageInfoFile))
+            {
+                return System.IO.Path.GetDirectoryName(packageInfoFile);
+            }
+
+            Debug.LogError($"Package '{packageName}' not found!");
+            return null;
         }
     }
 }
