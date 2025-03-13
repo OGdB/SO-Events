@@ -1,5 +1,3 @@
-// Parameterless GameEvent
-
 using UnityEngine;
 
 namespace SO_Events.Runtime.Event_types

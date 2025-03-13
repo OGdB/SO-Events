@@ -9,7 +9,7 @@ namespace SO_Events.Runtime
     [Serializable]
     public abstract class BaseGameEvent<TParameter> : ScriptableObject
     {
-        protected List<Action<TParameter>> _listeners = new();
+        protected List<Action<TParameter>> Listeners = new();
         public TParameter LastValue { get; protected set; }
 
         protected void OnEnable()
@@ -32,21 +32,21 @@ namespace SO_Events.Runtime
 
         public virtual void Raise(TParameter t)
         {
-            for (var i = _listeners.Count - 1; i >= 0; i--) _listeners[i]?.Invoke(t);
+            for (var i = Listeners.Count - 1; i >= 0; i--) Listeners[i]?.Invoke(t);
 
             LastValue = t;
         }
 
         public TParameter RegisterListener(Action<TParameter> listener)
         {
-            if (!_listeners.Contains(listener)) _listeners.Add(listener);
+            if (!Listeners.Contains(listener)) Listeners.Add(listener);
 
             return LastValue;
         }
 
         public void UnRegisterListener(Action<TParameter> listener)
         {
-            if (_listeners.Contains(listener)) _listeners.Remove(listener);
+            if (Listeners.Contains(listener)) Listeners.Remove(listener);
         }
 
         protected void OnSceneChange(Scene arg0, LoadSceneMode arg1)
