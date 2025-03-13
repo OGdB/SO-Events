@@ -22,54 +22,39 @@ namespace SO_Events.Editor
         // or BaseGameEvent<T>. If not, we won't do anything special.
         public override void OnInspectorGUI()
         {
-            // Draws the fields from the actual event script (debug toggles, etc.).
             DrawDefaultInspector();
-            EditorGUILayout.Space();
 
-            // Check if the target is parameterless or parameterized by reflection.
-            // Get the base class that might be BaseGameEvent or BaseGameEvent<TParameter>.
-            var scriptType = target.GetType();
-            var paramType = GetParameterGenericType(scriptType);
-
-            if (!IsBaseGameEvent(scriptType))
+            // Attempt to use our custom drawing if available.
+            if (target is IEventDrawer drawerEvent)
             {
-                // Not a BaseGameEvent, let default inspector handle it.
-                return;
-            }
+                // Retrieve or create a test value. For example, let’s use LastValue if possible.
+                object testValue = GetTestValue(target);
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Test Parameter Field", EditorStyles.boldLabel);
+                object newValue = drawerEvent.DrawParameterField(testValue);
 
-            // Show number of currently registered listeners
-            int count = GetListenersCount(target, paramType);
-            EditorGUILayout.LabelField("Registered Listeners", count.ToString());
-
-            // If parameterless, display a simple Raise button
-            if (paramType == null)
-            {
-                if (GUILayout.Button("Raise Event"))
-                {
-                    InvokeParameterlessRaise(target);
-                }
-            }
-            else
-            {
-                // Parameter-based event: show a field to set the test value and then Raise it.
-                object testValue = GetOrCreateTestValue(target, paramType);
-
-                // Draw a suitable control for known parameter types
-                object updatedValue = DrawParameterField(paramType, testValue);
-
-                // Save back if changed
-                if (updatedValue != null && updatedValue != testValue)
-                {
-                    s_TestValues[target] = updatedValue;
-                }
-
-                // Raise button
-                if (GUILayout.Button("Raise Event with Parameter"))
-                {
-                    InvokeParameterizedRaise(target, paramType, updatedValue);
-                }
+                // Display test value label after drawing.
+                EditorGUILayout.LabelField("Resulting Test Value:", newValue != null ? newValue.ToString() : "null");
             }
         }
+        
+        private object GetTestValue(UnityEngine.Object evt)
+        {
+            // If the event is a parameterized event (derived from BaseGameEvent<T>),
+            // we try to retrieve the LastValue. Otherwise, return a default test value.
+            var baseType = evt.GetType().BaseType;
+            if (baseType != null && baseType.IsGenericType)
+            {
+                var lastValueProp = baseType.GetProperty("LastValue");
+                if (lastValueProp != null)
+                {
+                    return lastValueProp.GetValue(evt);
+                }
+            }
+            // If not a parameterized event, simply return null.
+            return null;
+        }
+
 
         #region Reflection & Utility
 
