@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace SO_Events.Editor
+namespace SO_Events.Runtime.Editor
 {
     /// <summary>
     /// A custom Editor window to manage ScriptableObject Game Events.
@@ -13,8 +13,8 @@ namespace SO_Events.Editor
     /// </summary>
     public class EventManagementWindow : EditorWindow
     {
-        private const string defaultFolderName = "Event Instances";
-        private const string folderPathPrefKey = "EventManagementWindow_TargetPath";
+        private const string DefaultFolderName = "Event Instances";
+        private const string FolderPathPrefKey = "EventManagementWindow_TargetPath";
 
         // The target folder where new event instances will be created.
         private string _targetFolderPath;
@@ -39,12 +39,12 @@ namespace SO_Events.Editor
             if (string.IsNullOrEmpty(_targetFolderPath))
             {
                 var scriptPath = GetScriptFolderPath();
-                _targetFolderPath = System.IO.Path.Combine(scriptPath, defaultFolderName);
+                _targetFolderPath = System.IO.Path.Combine(scriptPath, DefaultFolderName);
 
                 // Check if a saved path exists in EditorPrefs and use it
-                if (EditorPrefs.HasKey(folderPathPrefKey))
+                if (EditorPrefs.HasKey(FolderPathPrefKey))
                 {
-                    _targetFolderPath = EditorPrefs.GetString(folderPathPrefKey);
+                    _targetFolderPath = EditorPrefs.GetString(FolderPathPrefKey);
                 }
             }
 
@@ -72,7 +72,7 @@ namespace SO_Events.Editor
                     if (selectedPath.StartsWith(Application.dataPath))
                     {
                         _targetFolderPath = "Assets" + selectedPath.Substring(Application.dataPath.Length);
-                        EditorPrefs.SetString(folderPathPrefKey, _targetFolderPath); // Save to EditorPrefs
+                        EditorPrefs.SetString(FolderPathPrefKey, _targetFolderPath); // Save to EditorPrefs
                     }
                     else
                     {
