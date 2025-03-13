@@ -3,5 +3,12 @@
   "version": "1.0.0",
   "displayName": "Event Management Package",
   "description": "An event system inspired by event buses using Scriptable Objects.",
-  "unity": "2020.3"
+  "unity": "2020.3",
+  "samples": [
+    {
+      "displayName": "Input Raycast Example",
+      "description": "A sample demonstrating how to use the event system to propagate raycast data.",
+      "path": "Samples~/InputRaycastExample"
+    }
+  ]
 }
