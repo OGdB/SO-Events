@@ -77,6 +77,7 @@ private void OnGUI()
         else
         {
             Debug.LogError("The folder path must be inside the 'Assets' folder.");
+            _targetFolderPath = DefaultTargetFolder;
         }
     }
 
