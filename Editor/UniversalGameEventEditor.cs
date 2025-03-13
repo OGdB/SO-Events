@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using SO_Events.Runtime;
 using UnityEditor;
 using UnityEngine;
 
-namespace SO_Events.Runtime.Editor
+namespace SO_Events.Editor
 {
     /// <summary>
     /// A universal CustomEditor for parameterless (BaseGameEvent)

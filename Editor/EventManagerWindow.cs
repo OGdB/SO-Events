@@ -4,8 +4,9 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
-namespace SO_Events.Runtime.Editor
+namespace SO_Events.Editor
 {
     /// <summary>
     /// A custom Editor window to manage ScriptableObject Game Events.
@@ -14,6 +15,7 @@ namespace SO_Events.Runtime.Editor
     public class EventManagementWindow : EditorWindow
     {
         private const string DefaultFolderName = "Event Instances";
+        private const string DefaultTargetFolder = "Assets/Packages/Event System/Event Instances";
         private const string FolderPathPrefKey = "EventManagementWindow_TargetPath";
 
         // The target folder where new event instances will be created.
@@ -35,11 +37,10 @@ namespace SO_Events.Runtime.Editor
 
         private void OnEnable()
         {
-            // Determine the default folder path (sibling to the script folder)
+            // Determine the default folder path
             if (string.IsNullOrEmpty(_targetFolderPath))
             {
-                var scriptPath = GetScriptFolderPath();
-                _targetFolderPath = System.IO.Path.Combine(scriptPath, DefaultFolderName);
+                _targetFolderPath = DefaultTargetFolder;
 
                 // Check if a saved path exists in EditorPrefs and use it
                 if (EditorPrefs.HasKey(FolderPathPrefKey))
@@ -52,112 +53,121 @@ namespace SO_Events.Runtime.Editor
             RefreshEventList();
         }
 
-        private void OnGUI()
+private void OnGUI()
+{
+    GUILayout.Label("Event Management", EditorStyles.boldLabel);
+
+    // -------------------------
+    // Target Folder Section
+    // -------------------------
+    GUILayout.Label("Target Folder", EditorStyles.miniBoldLabel);
+    EditorGUILayout.LabelField("Events will be created here:");
+
+    // Allow the user to manually edit the folder path
+    string newFolderPath = EditorGUILayout.TextField(_targetFolderPath);
+
+    // Validate and save the new path
+    if (newFolderPath != _targetFolderPath)
+    {
+        if (newFolderPath.StartsWith("Assets"))
         {
-            GUILayout.Label("Event Management", EditorStyles.boldLabel);
+            _targetFolderPath = newFolderPath;
+            EditorPrefs.SetString(FolderPathPrefKey, _targetFolderPath); // Persist the path
+        }
+        else
+        {
+            Debug.LogError("The folder path must be inside the 'Assets' folder.");
+        }
+    }
 
-            // -------------------------
-            // Target Folder Section
-            // -------------------------
-            GUILayout.Label("Target Folder", EditorStyles.miniBoldLabel);
-            EditorGUILayout.LabelField("Events will be created here:");
-            EditorGUILayout.LabelField(_targetFolderPath, EditorStyles.textField);
+    // Button to open folder picker
+    if (GUILayout.Button("Change Target Folder"))
+    {
+        // Force the current UI element (e.g., TextField) to lose focus
+        GUI.FocusControl(null);
 
-            if (GUILayout.Button("Change Target Folder"))
+        // Open the folder selection panel
+        string selectedPath = EditorUtility.OpenFolderPanel("Select Target Folder", Application.dataPath, "");
+
+        // Check if a valid path was selected
+        if (!string.IsNullOrEmpty(selectedPath))
+        {
+            // Convert absolute path to a Unity-relative path (e.g., "Assets/...").
+            if (selectedPath.StartsWith(Application.dataPath))
             {
-                string selectedPath = EditorUtility.OpenFolderPanel("Select Target Folder", "Assets", "");
-                if (!string.IsNullOrEmpty(selectedPath))
-                {
-                    // Convert the path to a Unity-relative asset path
-                    if (selectedPath.StartsWith(Application.dataPath))
-                    {
-                        _targetFolderPath = "Assets" + selectedPath.Substring(Application.dataPath.Length);
-                        EditorPrefs.SetString(FolderPathPrefKey, _targetFolderPath); // Save to EditorPrefs
-                    }
-                    else
-                    {
-                        Debug.LogError("Target folder must be inside the project’s Assets folder.");
-                    }
-                }
+                // Strip off the Application.dataPath part to get relative path
+                _targetFolderPath = "Assets" + selectedPath.Substring(Application.dataPath.Length).Replace("\\", "/");
+                EditorPrefs.SetString(FolderPathPrefKey, _targetFolderPath); // Save to EditorPrefs
+                Debug.Log($"Target folder changed to: {_targetFolderPath}");
             }
-
-            EditorGUILayout.Space(10);
-
-            // -------------------------
-            // Creation Section
-            // -------------------------
-            GUILayout.Label("Create a New Event", EditorStyles.miniBoldLabel);
-            using (new EditorGUILayout.HorizontalScope())
+            else
             {
-                _newEventName = EditorGUILayout.TextField("Event Name", _newEventName);
-                _selectedEventTypeIndex = EditorGUILayout.Popup(_selectedEventTypeIndex, _eventTypeNames);
-            }
-
-            if (GUILayout.Button("Create Event"))
-            {
-                CreateNewEvent(_newEventName, _eventConcreteTypes[_selectedEventTypeIndex]);
-                RefreshEventList();
-            }
-
-            EditorGUILayout.Space(10);
-
-            // -------------------------
-            // Existing Events List
-            // -------------------------
-            GUILayout.Label("All Existing Events", EditorStyles.miniBoldLabel);
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
-            {
-                foreach (var evt in _allEvents)
-                {
-                    if (evt == null)
-                        continue;
-                
-                    // Begin a horizontal area for each event.
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        // Reserve a rect for the object field.
-                        Rect rect = GUILayoutUtility.GetRect(EditorGUIUtility.currentViewWidth, EditorGUIUtility.singleLineHeight);
-                    
-                        // Draw the ObjectField as a disabled field so it appears read-only.
-                        EditorGUI.BeginDisabledGroup(true);
-                        EditorGUI.ObjectField(new Rect(rect.x, rect.y, rect.width - 70, rect.height), evt, typeof(ScriptableObject), false);
-                        EditorGUI.EndDisabledGroup();
-                    
-                        // Draw the delete button.
-                        if (GUI.Button(new Rect(rect.xMax - 60, rect.y, 60, rect.height), "Delete"))
-                        {
-                            if (EditorUtility.DisplayDialog("Confirm Deletion",
-                                    $"Delete event '{evt.name}' permanently?",
-                                    "Delete", "Cancel"))
-                            {
-                                DeleteEvent(evt);
-                                RefreshEventList();
-                                break;
-                            }
-                        }
-                    
-                        // Make the left part of the rect draggable.
-                        // We listen for a MouseDrag event within this rectangle.
-                        if (Event.current.type == EventType.MouseDrag &&
-                            new Rect(rect.x, rect.y, rect.width - 70, rect.height).Contains(Event.current.mousePosition))
-                        {
-                            DragAndDrop.PrepareStartDrag();
-                            DragAndDrop.objectReferences = new UnityEngine.Object[] { evt };
-                            // The title shown in the visual drag proxy.
-                            DragAndDrop.StartDrag("Dragging " + evt.name);
-                            Event.current.Use();
-                        }
-                    }
-                }
-            }
-            EditorGUILayout.EndScrollView();
-
-            if (GUILayout.Button("Refresh List"))
-            {
-                RefreshEventList();
+                // Path is outside the project
+                Debug.LogError("Target folder must be inside the project’s `Assets` folder.");
             }
         }
+    }
 
+    EditorGUILayout.Space(10);
+
+    // Rest of the GUI (event creation and list)
+    GUILayout.Label("Create a New Event", EditorStyles.miniBoldLabel);
+    using (new EditorGUILayout.HorizontalScope())
+    {
+        _newEventName = EditorGUILayout.TextField("Event Name", _newEventName);
+        _selectedEventTypeIndex = EditorGUILayout.Popup(_selectedEventTypeIndex, _eventTypeNames);
+    }
+
+    if (GUILayout.Button("Create Event"))
+    {
+        GUI.FocusControl(null);
+        CreateNewEvent(_newEventName, _eventConcreteTypes[_selectedEventTypeIndex]);
+        RefreshEventList();
+    }
+
+    EditorGUILayout.Space(10);
+
+    GUILayout.Label("All Existing Events", EditorStyles.miniBoldLabel);
+    _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
+    {
+        foreach (var evt in _allEvents)
+        {
+            if (!evt) continue;
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                Rect rect = GUILayoutUtility.GetRect(EditorGUIUtility.currentViewWidth, EditorGUIUtility.singleLineHeight);
+
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUI.ObjectField(new Rect(rect.x, rect.y, rect.width - 70, rect.height), evt, typeof(ScriptableObject), false);
+                EditorGUI.EndDisabledGroup();
+
+                if (GUI.Button(new Rect(rect.xMax - 60, rect.y, 60, rect.height), "Delete"))
+                {
+                    if (EditorUtility.DisplayDialog("Confirm Deletion", $"Delete event '{evt.name}' permanently?", "Delete", "Cancel"))
+                    {
+                        DeleteEvent(evt);
+                        RefreshEventList();
+                        break;
+                    }
+                }
+
+                if (Event.current.type == EventType.MouseDrag && new Rect(rect.x, rect.y, rect.width - 70, rect.height).Contains(Event.current.mousePosition))
+                {
+                    DragAndDrop.PrepareStartDrag();
+                    DragAndDrop.objectReferences = new Object[] { evt };
+                    DragAndDrop.StartDrag("Dragging " + evt.name);
+                    Event.current.Use();
+                }
+            }
+        }
+    }
+    EditorGUILayout.EndScrollView();
+
+    if (GUILayout.Button("Refresh List"))
+    {
+        RefreshEventList();
+    }
+}
         /// <summary>
         /// Finds all derived event types (e.g., FloatGameEvent, IntGameEvent) for the creation dropdown.
         /// </summary>
@@ -210,19 +220,20 @@ namespace SO_Events.Runtime.Editor
         /// </summary>
         private void CreateNewEvent(string eventName, Type eventType)
         {
-            if (!AssetDatabase.IsValidFolder(_targetFolderPath))
-            {
-                Debug.LogError($"Target folder '{_targetFolderPath}' is invalid. Ensure the folder exists.");
-                return;
-            }
+            // Ensure the target folder exists
+            EnsureFolderExists(_targetFolderPath);
 
-            ScriptableObject newEvent = ScriptableObject.CreateInstance(eventType);
+            // Create the ScriptableObject instance
+            ScriptableObject newEvent = CreateInstance(eventType);
             newEvent.name = eventName;
 
+            // Save it as an asset in the target folder
             string path = Path.Combine(_targetFolderPath, $"{eventName}.asset");
             AssetDatabase.CreateAsset(newEvent, path);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+
+            Debug.Log($"Created new event: {path}");
         }
 
         /// <summary>
@@ -245,14 +256,14 @@ namespace SO_Events.Runtime.Editor
             if (!string.IsNullOrEmpty(thisScriptGUID))
             {
                 string path = AssetDatabase.GUIDToAssetPath(thisScriptGUID);
-                return System.IO.Path.GetDirectoryName(path); // Path under "Assets/"
+                return Path.GetDirectoryName(path); // Path under "Assets/"
             }
 
             // Check if the script is inside the "Packages" folder
-            string packagePath = GetPackagePath("com.yourcompany.eventmanagement");
+            string packagePath = GetPackagePath("com.oeds.eventmanagement");
             if (!string.IsNullOrEmpty(packagePath))
             {
-                return System.IO.Path.Combine(packagePath, "Editor"); // Editor folder inside package
+                return Path.Combine(packagePath, "Editor"); // Editor folder inside package
             }
 
             // Default fallback
@@ -262,14 +273,49 @@ namespace SO_Events.Runtime.Editor
         
         private string GetPackagePath(string packageName)
         {
-            string packageInfoFile = System.IO.Path.Combine("Packages", packageName, "package.json");
-            if (System.IO.File.Exists(packageInfoFile))
+            string packageInfoFile = Path.Combine("Packages", packageName, "package.json");
+            if (File.Exists(packageInfoFile))
             {
-                return System.IO.Path.GetDirectoryName(packageInfoFile);
+                return Path.GetDirectoryName(packageInfoFile);
             }
 
             Debug.LogError($"Package '{packageName}' not found!");
             return null;
+        }
+        
+        /// <summary>
+        /// Ensures that the target folder exists by creating it if it doesn't.
+        /// </summary>
+        /// <param name="folderPath">The full Unity asset path (e.g., "Assets/MyFolder/SubFolder")</param>
+        private void EnsureFolderExists(string folderPath)
+        {
+            // Start with a normalized path to prevent issues with slashes
+            folderPath = folderPath.Replace("\\", "/");
+
+            // Check if the folder already exists
+            if (AssetDatabase.IsValidFolder(folderPath))
+                return;
+
+            // Split the folder path into individual parts (e.g., "Assets", "MyFolder", "SubFolder")
+            string[] folders = folderPath.Split('/');
+
+            // Start building the folder hierarchy from "Assets"
+            string currentPath = folders[0]; // This should always be "Assets" as the root
+
+            for (int i = 1; i < folders.Length; i++)
+            {
+                string newFolder = $"{currentPath}/{folders[i]}";
+
+                // Create the folder if it doesn't already exist
+                if (!AssetDatabase.IsValidFolder(newFolder))
+                {
+                    AssetDatabase.CreateFolder(currentPath, folders[i]);
+                    AssetDatabase.SaveAssets();
+                }
+
+                // Update the current path
+                currentPath = newFolder;
+            }
         }
     }
 }

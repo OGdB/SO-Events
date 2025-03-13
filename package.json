@@ -1,7 +1,7 @@
 {
-  "name": "com.yourcompany.eventmanagement",
+  "name": "com.oeds.eventmanagement",
   "version": "1.0.0",
   "displayName": "Event Management Package",
-  "description": "A flexible event-driven system for Unity projects.",
+  "description": "An event system inspired by event buses using Scriptable Objects.",
   "unity": "2020.3"
 }
