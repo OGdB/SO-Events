@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 090a71e9aea07b9478f84179089b6ea7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  raycastHitEvent: {fileID: 11400000, guid: 48fa770fc159dbf4283cb48d7f0d0259, type: 2}
+  raycastHitEvent: {fileID: 11400000, guid: 9573491669a2c1f45995550fe74422ef, type: 2}
   rayDistance: 100
   raycastLayerMask:
     serializedVersion: 2
