@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: 090a71e9aea07b9478f84179089b6ea7
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - raycastHitEvent: {fileID: 11400000, guid: 9573491669a2c1f45995550fe74422ef, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
