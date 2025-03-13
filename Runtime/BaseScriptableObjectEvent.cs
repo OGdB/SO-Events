@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace _Scripts.Events_system
+namespace SO_Events.Runtime
 {
     // Single type event with parameter
     [Serializable]

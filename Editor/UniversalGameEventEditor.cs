@@ -3,7 +3,7 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using _Scripts.Events_system;
+using SO_Events.Runtime;
 
 /// <summary>
 /// A universal CustomEditor for parameterless (BaseGameEvent)
