@@ -1,9 +1,7 @@
 {
   "name": "com.oeds.eventmanagement",
-  "version": "1.0.0",
   "displayName": "Event Management Package",
   "description": "An event system inspired by event buses using Scriptable Objects.",
-  "unity": "2020.3",
   "samples": [
     {
       "displayName": "Input Raycast Example",
