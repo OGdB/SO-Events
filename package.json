@@ -1,11 +1,7 @@
 {
-  "name": "com.oeds.eventmanagement",
+  "name": "com.yourcompany.eventmanagement",
   "version": "1.0.0",
-  "displayName": "Event Management",
-  "description": "A custom package including editor windows to create events with scriptable objects. Inspired by event buses.",
-  "unity": "2020.3",
-  "author": {
-    "name": "Oeds",
-    "email": "oedsdb@hotmail.com"
-  }
+  "displayName": "Event Management Package",
+  "description": "A flexible event-driven system for Unity projects.",
+  "unity": "2020.3"
 }
